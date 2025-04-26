@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator Signal Predictor</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #121a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: #1a233a;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4fc3f7;
+            margin-bottom: 20px;
+        }
+        
+        .signal-display {
+            background: #0f1626;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .current-multiplier {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4caf50;
+            margin: 10px 0;
+        }
+        
+        .prediction {
+            font-size: 1.2rem;
+            color: #ff9800;
+            margin-top: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #3a3a8a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #4a4a9a;
+        }
+        
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+        }
+        
+        .history {
+            margin-top: 30px;
+        }
+        
+        .history-title {
+            color: #4fc3f7;
+            margin-bottom: 10px;
+        }
+        
+        .history-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .history-item {
+            background: #0f1626;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .crash {
+            color: #f44336;
+        }
+        
+        .safe {
+            color: #4caf50;
+        }
+        
+        .disclaimer {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #777;
+            text-align: center;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aviator Signal Predictor</h1>
+        
+        <div class="signal-display">
+            <div>Current Multiplier:</div>
+            <div class="current-multiplier">1.00x</div>
+            <div class="prediction">Next prediction: 2.5x - 5x</div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">Start Round</button>
+            <button id="cashoutBtn" disabled>Cash Out</button>
+        </div>
+        
+        <div class="history">
+            <div class="history-title">Recent Results:</div>
+            <div class="history-items" id="historyItems">
+                <!-- History will appear here -->
+            </div>
+        </div>
+    </div>
+    
+    <div class="disclaimer">
+        Note: This is a simulation only. Real Aviator games use provably fair algorithms that cannot be predicted with certainty. This demo is for educational purposes only.
+    </div>
+
+    <script>
+        // Game variables
+        let currentMultiplier = 1.00;
+        let gameRunning = false;
+        let gameInterval;
+        let crashPoint;
+        let history = [];
+        
+        // DOM elements
+        const currentMultiplierEl = document.querySelector('.current-multiplier');
+        const predictionEl = document.querySelector('.prediction');
+        const startBtn = document.getElementById('startBtn');
+        const cashoutBtn = document.getElementById('cashoutBtn');
+        const historyItemsEl = document.getElementById('historyItems');
+        
+        // Generate a random crash point (1.1x to 100x)
+        function generateCrashPoint() {
+            // More likely to crash at lower multipliers
+            const rand = Math.random();
+            if (rand < 0.6) return (1 + Math.random() * 2).toFixed(2); // 1x-3x (60% chance)
+            if (rand < 0.9) return (1 + Math.random() * 10).toFixed(2); // 1x-11x (30% chance)
+            return (1 + Math.random() * 100).toFixed(2); // 1x-101x (10% chance)
+        }
+        
+        // Generate a fake prediction
+        function generatePrediction() {
+            const base = Math.random() * 5 + 1; // 1-6
+            const range = Math.random() * 10 + 2; // 2-12
+            return `${base.toFixed(1)}x - ${(base + range).toFixed(1)}x`;
+        }
+        
+        // Start a new round
+        function startRound() {
+            if (gameRunning) return;
+            
+            gameRunning = true;
+            currentMultiplier = 1.00;
+            crashPoint = parseFloat(generateCrashPoint());
+            predictionEl.textContent = `Next prediction: ${generatePrediction()}`;
+            
+            startBtn.disabled = true;
+            cashoutBtn.disabled = false;
+            
+            gameInterval = setInterval(() => {
+                currentMultiplier += 0.01;
+                currentMultiplierEl.textContent = currentMultiplier.toFixed(2) + 'x';
+                
+                // Check if crashed
+                if (currentMultiplier >= crashPoint) {
+                    endRound(false);
+                }
+            }, 50);
+        }
+        
+        // End the round (cashedOut = true if player cashed out)
+        function endRound(cashedOut) {
+            clearInterval(gameInterval);
+            gameRunning = false;
+            
+            if (!cashedOut) {
+                currentMultiplierEl.textContent = 'CRASH!';
+                currentMultiplierEl.className = 'current-multiplier crash';
+            } else {
+                currentMultiplierEl.className = 'current-multiplier safe';
+            }
+            
+            // Add to history
+            if (!cashedOut) {
+                history.unshift({
+                    value: crashPoint.toFixed(2) + 'x',
+                    crashed: true
+                });
+            } else {
+                history.unshift({
+                    value: currentMultiplier.toFixed(2) + 'x',
+                    crashed: false
+                });
+            }
+            
+            // Update history display
+            updateHistory();
+            
+            startBtn.disabled = false;
+            cashoutBtn.disabled = true;
+            
+            // Reset after a delay
+            setTimeout(() => {
+                currentMultiplier = 1.00;
+                currentMultiplierEl.textContent = '1.00x';
+                currentMultiplierEl.className = 'current-multiplier';
+            }, 2000);
+        }
+        
+        // Update history display
+        function updateHistory() {
+            historyItemsEl.innerHTML = '';
+            history.slice(0, 12).forEach(item => {
+                const el = document.createElement('div');
+                el.className = `history-item ${item.crashed ? 'crash' : 'safe'}`;
+                el.textContent = item.value;
+                historyItemsEl.appendChild(el);
+            });
+        }
+        
+        // Event listeners
+        startBtn.addEventListener('click', startRound);
+        cashoutBtn.addEventListener('click', () => endRound(true));
+        
+        // Initialize with some fake history
+        for (let i = 0; i < 5; i++) {
+            const val = generateCrashPoint();
+            history.push({
+                value: val + 'x',
+                crashed: true
+            });
+        }
+        updateHistory();
+    </script>
+</body>
+</html>
